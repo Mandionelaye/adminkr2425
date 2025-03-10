@@ -1,0 +1,20 @@
+<IfModule mod_headers.c>
+    # Autoriser les requêtes depuis n'importe quel domaine
+    Header set Access-Control-Allow-Origin "*"
+    
+    # Autoriser les méthodes POST, GET et OPTIONS
+    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    
+    # Autoriser certains en-têtes
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+    
+    # Répondre aux requêtes OPTIONS
+    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+</IfModule>
+
+# Page d'erreur 404 personnalisée
+ErrorDocument 404 /404-error.html
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# This domain inherits the “PHP” package.
+# php -- END cPanel-generated handler, do not edit
