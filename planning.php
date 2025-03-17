@@ -27,10 +27,10 @@ if (isset($_SESSION['message']) && isset($_SESSION['message_type'])) {
 
 // Requête pour récupérer les plannings avec leurs détails
 $stmt = $pdo->prepare("
-    SELECT p.id AS planning_id, p.date_creation, u.nom, u.prenom, 
+    SELECT p.id AS planning_id, p.date_creation, u.name, u.adresse, 
            dp.jour, dp.debut, dp.fin, dp.pause, dp.site, dp.fonction
     FROM planning p
-    JOIN utilisateurs u ON p.utilisateur_id = u.id
+    JOIN bj_site u ON p.utilisateur_id = u.id
     JOIN date_planning dp ON dp.planning_id = p.id
     WHERE p.entreprise_id = ?
     ORDER BY p.date_creation DESC
@@ -41,7 +41,7 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!doctype html>
 <html lang="fr">
-   <head>
+    <head>
       <!-- Required meta tags -->
       <meta charset="utf-8" />
       <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -51,93 +51,93 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
          content="Dashboard de gestion pour les entreprises, incluant la gestion des utilisateurs, des rondes, des statistiques et des abonnements." />
       <link rel="shortcut icon" type="image/x-icon" href="./assets/images/favicon/favicon.ico" />
 
-<!-- Libs CSS -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" />
-<link rel="stylesheet" href="./assets/libs/simplebar/dist/simplebar.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
+        <!-- Libs CSS -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" />
+        <link rel="stylesheet" href="./assets/libs/simplebar/dist/simplebar.min.css" />
+        <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
 
-<!-- Theme CSS -->
-<link rel="stylesheet" href="./assets/css/theme.min.css">
+        <!-- Theme CSS -->
+        <link rel="stylesheet" href="./assets/css/theme.min.css">
 
- 
+        
       <link rel="stylesheet" href="./assets/libs/apexcharts/dist/apexcharts.css" />
       <title>Liste des Plannings</title>
-    <style>
-    .alert {
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-    }
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    table th, table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-    }
-    table td {
-        color: black;
-    }
-    .header-container {
-        display: flex;
-        justify-content: space-between; /* Align title and button */
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    .btn-create {
-        background-color: #007bff;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: bold;
-    }
-    .btn-create:hover {
-        background-color: #0056b3;
-    }
-    .container{
-        padding: 10px;
-    }
+        <style>
+            .alert {
+                padding: 10px;
+                margin-bottom: 15px;
+                border-radius: 5px;
+            }
+            .alert-success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .alert-error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            table th, table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            table td {
+                color: black;
+            }
+            .header-container {
+                display: flex;
+                justify-content: space-between; /* Align title and button */
+                align-items: center;
+                margin-bottom: 20px;
+            }
+            .btn-create {
+                background-color:rgb(79 70 229);
+                color: white;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            .btn-create:hover {
+                background-color:rgb(79 70 229);
+            }
+            .container{
+                padding: 10px;
+            }
 
-    /* Style pour les boutons d'action */
-    table th {
-        background-color: #007bff; /* Bleu */
-        color: white;
-        text-align: left;
-        padding: 8px;
-    }
-    .btn-modifier {
-        background-color: #007bff; /* Bleu */
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 3px;
-        cursor: pointer;
-        text-decoration: none;
-        font-size: 14px;
-    }
+            /* Style pour les boutons d'action */
+            table th {
+                background-color:rgb(79 70 229); /* Bleu */
+                color: white;
+                text-align: left;
+                padding: 8px;
+            }
+            .btn-modifier {
+                background-color:rgb(14, 120, 240); /* Bleu */
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 3px;
+                cursor: pointer;
+                text-decoration: none;
+                font-size: 14px;
+            }
 
-    .btn-modifier:hover {
-        background-color: #0056b3; /* Bleu foncé au survol */
-    }
-</style>
-</head>
+            .btn-modifier:hover {
+                background-color:rgb(12, 105, 206); /* Bleu foncé au survol */
+            }
+        </style>
+    </head>
 
    <body class="bg-gray-100 py-6">
       <main>
@@ -145,83 +145,7 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
          <!-- app layout -->
          <div id="app-layout" class="overflow-x-hidden flex">
             <!-- start navbar -->
-<nav class="navbar-vertical navbar">
-   <div id="myScrollableElement" class="h-screen" data-simplebar>
-     <!-- Logo de la marque -->
-     <a class="navbar-brand" href="index.php" style="display: flex; justify-content: center; align-items: center; width: 100%;">
-       <img src="./assets/images/logo-2.png" alt="Logo de l'entreprise" style="max-height: 50px;" />
-     </a>
-
-      <!-- Menu de navigation -->
-      <ul class="navbar-nav flex-col" id="sideNavbar">
-         <!-- Tableau de bord -->
-         <li class="nav-item">
-            <a class="nav-link  active " href="index.php">
-               <i data-feather="home" class="w-4 h-4 mr-2"></i>
-               Tableau de Bord
-            </a>
-         </li>
-
-         <!-- Gestion des utilisateurs -->
-         <li class="nav-item">
-            <a class="nav-link  collapsed " href="#!" data-bs-toggle="collapse" data-bs-target="#navAgents" aria-expanded="false" aria-controls="navAgents">
-               <i data-feather="users" class="w-4 h-4 mr-2"></i>
-               Employés
-            </a>
-            <div id="navAgents" class="collapse " data-bs-parent="#sideNavbar">
-               <ul class="nav flex-col">
-                  <li class="nav-item">
-                     <a class="nav-link " href="./add-employe.php">Ajouter un employé</a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link " href="./manage-employes.php">Gérer les employés</a>
-                  </li>
-               </ul>
-            </div>
-         </li>
-
-          <!-- Planning -->
-         <li class="nav-item">
-            <a class="nav-link" href="./planning.php">
-               <i data-feather="calendar" class="w-4 h-4 mr-2"></i>
-               Planning
-            </a>
-         </li>
-         
-          <!-- Gestion des mains courantes -->
-         <li class="nav-item">
-            <a class="nav-link " href="./main-courante.php">
-               <i data-feather="user-check" class="w-4 h-4 mr-2"></i>
-               Main Courantes
-            </a>
-         </li>
-
-         <!-- Gestion des abonnements -->
-         <li class="nav-item">
-            <a class="nav-link " href="./abonnement.php">
-               <i data-feather="credit-card" class="w-4 h-4 mr-2"></i>
-               Abonnement
-            </a>
-         </li>
-
-        <!-- Statistiques -->
-   <li class="nav-item">
-      <a class="nav-link " href="./stats.php">
-         <i data-feather="bar-chart" class="w-4 h-4 mr-2"></i>
-         Rapports
-      </a>
-   </li>
-
-   <!-- Notifications -->
-   <li class="nav-item">
-      <a class="nav-link " href="./notifications.php">
-         <i data-feather="bell" class="w-4 h-4 mr-2"></i>
-         Alertes
-      </a>
-   </li>
-      </ul>
-   </div>
-</nav>
+            <?php require_once 'layout/sidebar.php'; ?>
 <!--end of navbar-->
 
 <!-- Style CSS pour espacer les éléments du menu -->
@@ -265,78 +189,78 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
    
    .container {
     padding: 16px;
-}
+    }
 
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
 
-.header-container h3 {
-    margin: 0;
-}
-
-.header-container .btn-create {
-    background-color: #007BFF;
-    color: #fff;
-    padding: 8px 16px;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.table-responsive {
-    overflow-x: auto; /* Ajout d'un défilement horizontal */
-    -webkit-overflow-scrolling: touch; /* Défilement fluide pour les appareils mobiles */
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-
-table th, table td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-}
-
-
-.btn-modifier {
-    color: #fff;
-    background-color: #28a745;
-    padding: 6px 12px;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.alert {
-    padding: 12px;
-    margin-bottom: 16px;
-    border-radius: 4px;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.alert-error {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-
-@media (max-width: 768px) {
     .header-container h3 {
-        display: none; /* Masquer le titre sur mobile */
+        margin: 0;
+    }
+
+    .header-container .btn-create {
+        background-color: rgb(79 70 229 / var(--tw-bg-opacity, 1));;
+        color: #fff;
+        padding: 8px 16px;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
+    .table-responsive {
+        overflow-x: auto; /* Ajout d'un défilement horizontal */
+        -webkit-overflow-scrolling: touch; /* Défilement fluide pour les appareils mobiles */
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    table th, table td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+    }
+
+
+    .btn-modifier {
+        color: #fff;
+        background-color: rgb(79 70 229);
+        padding: 6px 12px;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
+    .alert {
+        padding: 12px;
+        margin-bottom: 16px;
+        border-radius: 4px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+
+    @media (max-width: 768px) {
+        .header-container h3 {
+            display: none; /* Masquer le titre sur mobile */
     }
 
     .header-container .btn-create {
         margin-left: auto; /* S'assure que le bouton reste aligné à droite */
     }
-}
+    }
 
 
 </style>
@@ -480,12 +404,11 @@ table th, table td {
         <table>
             <thead>
                 <tr>
-                    <th>Nom Agent</th>
+                    <th>Nom Site</th>
                     <th>Jour</th>
                     <th>Début</th>
                     <th>Fin</th>
                     <th>Pause</th>
-                    <th>Site</th>
                     <th>Fonction</th>
                     <th>Actions</th>
                 </tr>
@@ -498,12 +421,12 @@ table th, table td {
                 <?php else: ?>
                     <?php foreach ($plannings as $planning): ?>
                         <tr>
-                            <td><?= htmlspecialchars($planning['prenom'] . ' ' . $planning['nom']) ?></td>
+                            <td><?= htmlspecialchars($planning['name'] . ' ' . $planning['adresse']) ?></td>
                             <td><?= htmlspecialchars($planning['jour']) ?></td>
                             <td><?= htmlspecialchars($planning['debut']) ?></td>
                             <td><?= htmlspecialchars($planning['fin']) ?></td>
                             <td><?= htmlspecialchars($planning['pause']) ?></td>
-                            <td><?= htmlspecialchars($planning['site']) ?></td>
+                            
                             <td><?= htmlspecialchars($planning['fonction']) ?></td>
                             <td>
                                 <a href="modifier_planning.php?id=<?= $planning['planning_id'] ?>" class="btn-modifier">Modifier</a>

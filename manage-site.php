@@ -1,27 +1,19 @@
 <?php
-session_start();
-
-// Vérifier si l'utilisateur est authentifié
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_role'])) {
-    // Si l'utilisateur n'est pas authentifié, rediriger vers la page de connexion
-    header("Location: login.php");
-    exit();
-}
-
 // Vérifier si l'utilisateur a le rôle 'entreprise'
-if ($_SESSION['user_role'] !== 'entreprise') {
-    header("Location: index.php");
-    exit();
+if (isset( $_SESSION['message1'])) {
+  $message=  $_SESSION['message1'];
+    
 }
 
 // Inclure la configuration de la base de données
 require_once 'config.php';
 
 // Récupérer les employés de la base de données (seulement agents et contrôleurs)
-$entreprise_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE entreprise_id = ? AND role IN ('agent', 'controleur')");
-$stmt->execute([$entreprise_id]);
-$employes = $stmt->fetchAll();
+
+$stmt = $pdo->prepare("SELECT * FROM bj_site");
+$stmt->execute();
+$sites = $stmt->fetchAll();
+
 ?>
 
 
@@ -37,24 +29,24 @@ $employes = $stmt->fetchAll();
          content="Dashboard de gestion pour les entreprises, incluant la gestion des utilisateurs, des rondes, des statistiques et des abonnements." />
       <link rel="shortcut icon" type="image/x-icon" href="./assets/images/favicon/favicon.ico" />
 
-<!-- Libs CSS -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" />
-<link rel="stylesheet" href="./assets/libs/simplebar/dist/simplebar.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+      <!-- Libs CSS -->
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" />
+      <link rel="stylesheet" href="./assets/libs/simplebar/dist/simplebar.min.css" />
+      <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-    <!-- tailwindcss -->
-   <script src="https://cdn.tailwindcss.com"></script>
-   <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+         <!-- tailwindcss -->
+         <script src="https://cdn.tailwindcss.com"></script>
+         <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
 
-<!-- Theme CSS -->
-<link rel="stylesheet" href="./assets/css/theme.min.css">
+      <!-- Theme CSS -->
+      <link rel="stylesheet" href="./assets/css/theme.min.css">
 
  
       <link rel="stylesheet" href="./assets/libs/apexcharts/dist/apexcharts.css" />
-      <title>Gérer les employés</title>
+      <title>Gérer les sites</title>
    </head>
    <body>
       <main>
@@ -63,59 +55,59 @@ $employes = $stmt->fetchAll();
          <div id="app-layout" class="overflow-x-hidden flex">
             <!-- start navbar -->
             <?php require_once 'layout/sidebar.php'; ?>
-<!--end of navbar-->
+            <!--end of navbar-->
 
-<!-- Style CSS pour espacer les éléments du menu -->
-<style>
-   .navbar-nav {
-      gap: 1.2rem; /* Espacement global entre les éléments */
-      padding-left: 0;
-   }
+            <!-- Style CSS pour espacer les éléments du menu -->
+            <style>
+               .navbar-nav {
+                  gap: 1.2rem; /* Espacement global entre les éléments */
+                  padding-left: 0;
+               }
 
-   .nav-item {
-      margin-bottom: 1.2rem; /* Marges verticales entre les éléments */
-   }
+               .nav-item {
+                  margin-bottom: 1.2rem; /* Marges verticales entre les éléments */
+               }
 
-   .nav-item a {
-      display: flex;
-      align-items: center; /* Aligner les icônes et le texte sur la même ligne */
-      padding: 0.8rem 1.2rem; /* Un peu de padding pour rendre les éléments plus cliquables */
-   }
+               .nav-item a {
+                  display: flex;
+                  align-items: center; /* Aligner les icônes et le texte sur la même ligne */
+                  padding: 0.8rem 1.2rem; /* Un peu de padding pour rendre les éléments plus cliquables */
+               }
 
-   .nav-link {
-      font-size: 1rem;
-      color: white; /* Couleur du texte en blanc */
-      transition: color 0.3s ease;
-   }
-   .navbar-vertical .navbar-nav .nav-item .nav-link{
-      color: white !important;
-   }
+               .nav-link {
+                  font-size: 1rem;
+                  color: white; /* Couleur du texte en blanc */
+                  transition: color 0.3s ease;
+               }
+               .navbar-vertical .navbar-nav .nav-item .nav-link{
+                  color: white !important;
+               }
 
-   .nav-link.active {
-      color: #ffc107; /* Couleur des éléments actifs (jaune) */
-   }
+               .nav-link.active {
+                  color: #ffc107; /* Couleur des éléments actifs (jaune) */
+               }
 
-   .nav-link:hover {
-      color: #d1d1d1; /* Couleur de survol des éléments (gris clair) */
-   }
+               .nav-link:hover {
+                  color: #d1d1d1; /* Couleur de survol des éléments (gris clair) */
+               }
 
-   .navbar-vertical {
-      box-shadow: 2px 0px 6px rgba(0, 0, 0, 0.1); /* Ombre douce pour donner un effet de profondeur */
-   }
+               .navbar-vertical {
+                  box-shadow: 2px 0px 6px rgba(0, 0, 0, 0.1); /* Ombre douce pour donner un effet de profondeur */
+               }
 
-   .profilImg{
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      overflow: hidden;
-      object-fit: cover;
-   }
-</style>
+               .profilImg{
+                  width: 35px;
+                  height: 35px;
+                  border-radius: 50%;
+                  overflow: hidden;
+                  object-fit: cover;
+               }
+            </style>
 
             <!-- app layout content -->
             <div id="app-layout-content" class="min-h-screen w-full min-w-[100vw] md:min-w-0 ml-[15.625rem] [transition:margin_0.25s_ease-out]">
                <!-- début de la barre de navigation -->
-<div class="header">
+           <div class="header">
    <!-- navbar -->
    <nav class="bg-white px-6 py-[10px] flex items-center justify-between shadow-sm">
       <a id="nav-toggle" href="#" class="text-gray-800">
@@ -227,69 +219,75 @@ $employes = $stmt->fetchAll();
 <!-- fin de la barre de navigation -->
 
                <div class="bg-indigo-600 px-8 pt-4 pb-4 flex justify-between items-center mb-3">
-                <h3 class="text-white mb-1 font-normal">Gérer les employés</h3>
+                <h3 class="text-white mb-1 font-normal">Gérer les sites</h3>
             </div>
+            <?php if (!empty($message)): ?>
+            <div class="bg-green-200 text-green-800 p-4 mb-6 rounded-lg font-semibold">
+                <?php echo $message; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($error_message)): ?>
+            <div class="bg-red-200 text-red-800 p-4 mb-6 rounded-lg font-semibold">
+                <?php echo $error_message; ?>
+            </div>
+        <?php endif; ?>
             
             <!-- Barre sous le texte -->
             <hr class="border-t border-indigo-400 my-1">
             
-             <div class="card shadow-lg">
+         <div class="card shadow-lg">
             <div class="card-body">
-                <h5 class="text-2xl font-semibold text-gray-800 mb-6">Liste des Employés</h5>
+                <h5 class="text-2xl font-semibold text-gray-800 mb-6">Liste des sites</h5>
                 
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full table-auto border-separate border-spacing-0 rounded-lg overflow-hidden">
                         <thead>
                             <tr class="bg-indigo-600 text-white">
-                                <th class="px-6 py-3 text-left">Photo</th>
-                                <th class="px-6 py-3 text-left">Prénom</th>
                                 <th class="px-6 py-3 text-left">Nom</th>
-                                <th class="px-6 py-3 text-left">Email</th>
-                                <th class="px-6 py-3 text-left">Téléphone</th>
-                                <th class="px-6 py-3 text-left">Rôle</th> 
-                                 <th class="px-6 py-3 text-left">Fonction</th>
+                                <th class="px-6 py-3 text-left">Adresse</th>
+                                <th class="px-6 py-3 text-left">Phone</th>
+                                <th class="px-6 py-3 text-left">Ouv</th>
+                                <th class="px-6 py-3 text-left">Ferm</th>
+                                <th class="px-6 py-3 text-left">Date</th> 
                                 <th class="px-6 py-3 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($employes as $employe): ?>
+                            <?php foreach ($sites as $site): ?>
                                 <tr class="hover:bg-gray-100 transition duration-200">
-                                    <td class="px-6 py-4 text-gray-800"><img class="profilImg rounded-full" src="<?= $employe['photo']?
-                                                   $employe['photo']
-                                                    :'assets/images/avatar/profilImg.png' ?>" id="imgP"
-                                                        alt="Profile">
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($employe['prenom']); ?></td>
-                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($employe['nom']); ?></td>
-                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($employe['email']); ?></td>
-                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($employe['telephone']); ?></td>
-                                    <td class="px-6 py-4 text-gray-800"><?php echo ucfirst(htmlspecialchars($employe['role'])); ?></td> 
-                                  <td class="px-6 py-4 text-gray-800">
-                                        <?php 
-                                            // Remplacer les virgules par un retour à la ligne
-                                            $fonction = ucfirst(htmlspecialchars($employe['fonction']));
-                                            echo nl2br(str_replace(',', ',<br>', $fonction));
-                                        ?>
-                                    </td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['name']); ?></td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['adresse']); ?></td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['phone']); ?></td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['ouverture']); ?></td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['fermeture']); ?></td>
+                                    <td class="px-6 py-4 text-gray-800"><?php echo htmlspecialchars($site['date']); ?></td> 
                                    <td class="">
                                 <div class="flex space-x-3 justify-start"> <!-- Augmentation de l'espace -->
 
                                 <!-- Bouton details avec icône, fond et effet au survol -->
-                                <a data-modal-target="default-modal<?= $employe['id'] ?>" data-modal-toggle="default-modal<?= $employe['id'] ?>"
+                                <a data-modal-target="default-modal<?= $site['id'] ?>" data-modal-toggle="default-modal<?= $site['id'] ?>"
                                        class="flex items-center justify-center px-2 py-2  bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
                                        >
                                         <i class="fas fa-eye "></i> 
                                     </a>
                                     
                                     <!-- Bouton Modifier avec icône, fond et effet au survol -->
-                                    <a href="modifier-employe.php?id=<?php echo $employe['id']; ?>" 
-                                       class="flex items-center justify-center px-2 py-2  bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-                                       >
+                                    <a href="modifier-site.php?id=<?php echo $site['id']; ?>" 
+                                       class="flex items-center justify-center px-2 py-2  bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
                                         <i class="fas fa-edit "></i> 
                                     </a>
 
+                                    <a href="attribution.php?id_site=<?= $site['id']; ?>"  
+                                       class="flex items-center justify-center px-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                                       A
+                                    </a>
+
+
+
+                            
                                     <!-- Bouton Supprimer avec icône, fond et effet au survol -->
-                                    <a href="supprimer-employe.php?id=<?php echo $employe['id']; ?>" 
+                                    <a href="supprimer-site.php?id=<?php echo $site['id']; ?>" 
                                        class="flex items-center px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?');">
                                         <i class="fas fa-trash-alt"></i> 
@@ -302,11 +300,11 @@ $employes = $stmt->fetchAll();
                     </table>
                 </div>
             </div>
-        </div>
+         </div>
 
-        <?php foreach ($employes as $employe): ?>
+        <?php foreach ($sites as $site): ?>
          <!-- Main modal -->
-         <div id="default-modal<?= $employe['id'] ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+         <div id="default-modal<?= $site['id'] ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
                <div class="relative p-4 w-full max-w-2xl max-h-full">
                   <!-- Modal content -->
                   <div class="relative bg-white rounded-lg shadow-sm">
@@ -340,178 +338,65 @@ $employes = $stmt->fetchAll();
                               <tbody>
                                     <tr class="bg-white border-b border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Matricule
+                                       ID
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["matricule"] ?>
+                                         <?= $site["id"] ?>
                                        </td>
                                     </tr>
                                     <tr class="bg-white border-b   border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                         Prénom
+                                         Nom
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["prenom"] ?>
+                                         <?= $site["name"] ?>
                                        </td>
                                     </tr>
                                     <tr class="bg-white border-b border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                         Nom
+                                         Adresse
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["nom"] ?>
+                                         <?= $site["adresse"] ?>
                                        </td>
                                     </tr>
 
                                     <tr class="bg-white border-b  border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Email 
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["email"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                        Telephone
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["telephone"] ?>
+                                         <?= $site["phone"] ?>
                                        </td>
                                     </tr>
 
                                     <tr class="bg-white border-b border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Role
+                                       Ouverture
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["role"] ?>
+                                         <?= $site["ouverture"] ?>
                                        </td>
                                     </tr>
 
                                     <tr class="bg-white border-b border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Fonction
+                                       Fermeture
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["fonction"] ?>
-                                       </td>
-                                    </tr>
-
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Début du contrat
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["debut_contrat"] ?>
-                                       </td>
-                                    </tr>
-
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Fin contrat
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["fin_contrat"] ?>
-                                       </td>
-                                    </tr>
-
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Date d'embauche
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["date_embauche"] ?>
+                                         <?= $site["fermeture"] ?>
                                        </td>
                                     </tr>
 
                                     <tr class="bg-white border-b border-gray-200">
                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Type contrat
+                                       Date
                                        </th>
                                        <td class="px-6 py-4">
-                                         <?= $employe["type_contrat"] ?>
+                                         <?= $site["date"] ?>
                                        </td>
                                     </tr>
 
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Nationalite
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["nationalite"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       CNI
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["num_cni"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Langue
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["langue"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Genre
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["genre"] == 'M'? 'Homme' : 'Femme' ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Véhicule
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["vehicule"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Permis de conduire
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["permis"] ?>
-                                       </td>
-                                    </tr>
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       nombre d'heur par mois
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["nombre_heur"] ?>
-                                       </td>
-                                    </tr>
-
-
-
-                                    <tr class="bg-white border-b border-gray-200">
-                                       <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                                       Date de reation
-                                       </th>
-                                       <td class="px-6 py-4">
-                                         <?= $employe["date_creation"] ?>
-                                       </td>
-                                    </tr>
-                                   
                               </tbody>
                            </table>
                         </div>
@@ -519,7 +404,7 @@ $employes = $stmt->fetchAll();
                      </div>
                      <!-- Modal footer -->
                      <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b ">
-                           <button data-modal-hide="default-modal<?= $employe['id'] ?>" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center :bg-blue-600">Fermer</button>
+                           <button data-modal-hide="default-modal<?= $site['id'] ?>" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center :bg-blue-600">Fermer</button>
                      </div>
                   </div>
                </div>
