@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : lun. 10 mars 2025 à 09:34
+-- Généré le : lun. 17 mars 2025 à 10:18
 -- Version du serveur : 10.4.22-MariaDB
 -- Version de PHP : 8.1.2
 
@@ -82,6 +82,27 @@ INSERT INTO `abonnement_fonctionnalites` (`id`, `abonnement_id`, `fonctionnalite
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `attribution`
+--
+
+CREATE TABLE `attribution` (
+  `id_att` int(10) UNSIGNED NOT NULL,
+  `id_agent` int(10) UNSIGNED NOT NULL,
+  `id_site` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Déchargement des données de la table `attribution`
+--
+
+INSERT INTO `attribution` (`id_att`, `id_agent`, `id_site`) VALUES
+(10, 27, 5),
+(11, 4, 6),
+(12, 13, 5);
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `bj_site`
 --
 
@@ -101,8 +122,8 @@ CREATE TABLE `bj_site` (
 --
 
 INSERT INTO `bj_site` (`id`, `name`, `adresse`, `phone`, `idplanning`, `ouverture`, `fermeture`, `date`) VALUES
-(4, 'Radisone', 'Dakar', 2147483647, 0, '10:00:00', '23:00:00', '2025-03-09 05:13:53'),
-(5, 'Radisone', 'Dakar, Camberene', 2147483647, 0, '10:00:00', '20:00:00', '2025-03-09 05:15:11');
+(5, 'Radisone', '2147483648', 10, 0, '23:00:00', '05:13:53', '0000-00-00 00:00:00'),
+(6, 'almakhdi', 'Dakar', 772953878, 0, '08:00:00', '00:00:00', '2025-03-11 15:46:37');
 
 -- --------------------------------------------------------
 
@@ -179,7 +200,9 @@ INSERT INTO `date_planning` (`id`, `planning_id`, `jour`, `debut`, `fin`, `pause
 (30, 34, 'Lundi', '10:00:00', '19:00:00', '12:00:00', '08:48:00', 'Dakar', 'Chef d\'équipe de sécurité incendie SSIAP 2'),
 (31, 35, 'Lundi', '10:00:00', '19:00:00', '12:00:00', '08:48:00', 'Dakar', 'Chef d\'équipe de sécurité incendie SSIAP 2'),
 (32, 38, 'Lundi', '10:00:00', '23:00:00', '13:00:00', '12:47:00', '', 'Agent de sécurité cynophile'),
-(33, 39, 'Lundi', '10:00:00', '20:00:00', '14:00:00', '09:46:00', '', 'Formation');
+(33, 39, 'Lundi', '10:00:00', '20:00:00', '14:00:00', '09:46:00', '', 'Formation table'),
+(34, 40, 'mardi', '08:00:00', '00:00:00', '13:00:00', '07:47:00', '', 'Agent de sécurité incendie SSIAP 1, Chef de service SSIAP 3'),
+(35, 40, 'mardi', '08:00:00', '00:00:00', '13:00:00', '07:47:00', '', 'Agent de sécurité incendie SSIAP 1, Chef de service SSIAP 3');
 
 -- --------------------------------------------------------
 
@@ -357,7 +380,8 @@ INSERT INTO `planning` (`id`, `entreprise_id`, `utilisateur_id`, `date_creation`
 (34, 3, 27, '2025-03-02 03:49:13'),
 (35, 3, 27, '2025-03-02 03:57:59'),
 (38, 3, 4, '2025-03-09 05:13:53'),
-(39, 3, 5, '2025-03-09 05:15:11');
+(39, 3, 5, '2025-03-12 00:00:00'),
+(40, 3, 6, NULL);
 
 -- --------------------------------------------------------
 
@@ -601,6 +625,12 @@ ALTER TABLE `abonnement_fonctionnalites`
   ADD KEY `abonnement_id` (`abonnement_id`);
 
 --
+-- Index pour la table `attribution`
+--
+ALTER TABLE `attribution`
+  ADD PRIMARY KEY (`id_att`);
+
+--
 -- Index pour la table `bj_site`
 --
 ALTER TABLE `bj_site`
@@ -718,10 +748,16 @@ ALTER TABLE `abonnement_fonctionnalites`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
+-- AUTO_INCREMENT pour la table `attribution`
+--
+ALTER TABLE `attribution`
+  MODIFY `id_att` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
 -- AUTO_INCREMENT pour la table `bj_site`
 --
 ALTER TABLE `bj_site`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `categories`
@@ -733,7 +769,7 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT pour la table `date_planning`
 --
 ALTER TABLE `date_planning`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT pour la table `entreprises`
@@ -769,7 +805,7 @@ ALTER TABLE `paiements`
 -- AUTO_INCREMENT pour la table `planning`
 --
 ALTER TABLE `planning`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT pour la table `rapports`
