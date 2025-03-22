@@ -139,7 +139,7 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </style>
     </head>
 
-   <body class="bg-gray-100 py-6">
+   <body >
       <main>
          <!-- start the project -->
          <!-- app layout -->
@@ -378,9 +378,9 @@ $plannings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 <!-- fin de la barre de navigation -->
 
-                <div class="bg-indigo-600 px-8 pt-4 pb-4 flex justify-between items-center mb-3">
-    <h3 class="text-white mb-1 font-normal">Planification des agents</h3>
-</div>
+            <div class="bg-indigo-600 px-8 pt-4 pb-4 flex justify-between items-center mb-3">
+                <h3 class="text-white mb-1 font-normal">Gérer les plannings</h3>
+            </div>
 
 <!-- Barre sous le texte -->
 <hr class="border-t border-indigo-400 my-1">

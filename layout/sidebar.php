@@ -77,12 +77,25 @@
          </li>
 
         <!-- Statistiques -->
-   <li class="nav-item">
-      <a class="nav-link " href="./stats.php">
-         <i data-feather="bar-chart" class="w-4 h-4 mr-2"></i>
-         Rapports
-      </a>
-   </li>
+        <li class="nav-item">
+            <a class="nav-link  collapsed " href="#!" data-bs-toggle="collapse" data-bs-target="#navAgentsse" aria-expanded="false" aria-controls="navAgentsse">
+               <i data-feather="flag" class="w-4 h-4 mr-2"></i>
+               Rapports
+            </a>
+            <div id="navAgentsse" class="collapse " data-bs-parent="#sideNavbar">
+               <ul class="nav flex-col">
+                  <li class="nav-item">
+                     <a class="nav-link " href="./entrees.php">Gestion des entrees</a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link " href="./permis.php">Permis de Feu</a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link " href="./bilan.php">Bilan d'Urgence</a>
+                  </li>
+               </ul>
+            </div>
+         </li>
 
    <!-- Notifications -->
    <li class="nav-item">
