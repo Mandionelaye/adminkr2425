@@ -1,124 +1,114 @@
 <?php
-// Connexion à la base de données (à adapter selon votre configuration)
+
+session_start();
+
+// Vérifier si l'utilisateur est authentifié
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_role'])) {
+    // Si l'utilisateur n'est pas authentifié, rediriger vers la page de connexion
+    header("Location: login.php");
+    exit();
+}
+
+// Vérifier si l'utilisateur a le rôle 'entreprise'
+if ($_SESSION['user_role'] !== 'entreprise') {
+    header("Location: index.php");
+    exit();
+}
+
+
+// Define constant to allow includes
+define('INCLUDED_FROM_ENTREES', true);
+
+// Connexion à la base de données
 require_once 'config.php';
 
-// Fonction pour vérifier si un lien est actif
-function isActive($path) {
-    $current_page = basename($_SERVER['PHP_SELF']);
-    return $current_page == $path;
-}
+// Get list of agents (users with role 'agent')
+$agents_query = "SELECT *, CONCAT(nom, ' ',prenom) as agent_nom  FROM utilisateurs WHERE role = 'agent' ORDER BY nom";
+$agents_stmt = $pdo->query($agents_query);
+$agents = $agents_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fonction pour vérifier si un lien parent est actif
-function isParentActive($path) {
-    $current_page = $_SERVER['PHP_SELF'];
-    return strpos($current_page, $path) !== false;
-}
 
-// Traitement du formulaire lors de la soumission
 $message = "";
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Récupération des données du formulaire
-    $numeroPermis = $_POST['numeroPermis'] ?? '';
-    $etablissement = $_POST['etablissement'] ?? '';
-    $adresse = $_POST['adresse'] ?? '';
-    $codePostal = $_POST['codePostal'] ?? '';
-    $ville = $_POST['ville'] ?? '';
-    
-    // Ordre de travail
-    $nomDonneur = $_POST['nomDonneur'] ?? '';
-    $prenomsDonneur = $_POST['prenomsDonneur'] ?? '';
-    $fonctionDonneur = $_POST['fonctionDonneur'] ?? '';
-    $codePostalDonneur = $_POST['codePostalDonneur'] ?? '';
-    
-    // Exécution
-    $serviceInterne = isset($_POST['serviceInterne']) ? 1 : 0;
-    $entreprise = isset($_POST['entreprise']) ? 1 : 0;
-    $adresseExecution = $_POST['adresseExecution'] ?? '';
-    $codePostalExecution = $_POST['codePostalExecution'] ?? '';
-    $villeExecution = $_POST['villeExecution'] ?? '';
-    
-    // Second ordre de travail
-    $nomDonneur2 = $_POST['nomDonneur2'] ?? '';
-    $prenomsDonneur2 = $_POST['prenomsDonneur2'] ?? '';
-    $fonctionDonneur2 = $_POST['fonctionDonneur2'] ?? '';
-    $codePostalDonneur2 = $_POST['codePostalDonneur2'] ?? '';
-    
-    // Responsable des travaux
-    $nomResponsable = $_POST['nomResponsable'] ?? '';
-    $prenomsResponsable = $_POST['prenomsResponsable'] ?? '';
-    $fonctionResponsable = $_POST['fonctionResponsable'] ?? '';
-    $codePostalResponsable = $_POST['codePostalResponsable'] ?? '';
-    
-    // Personnel exécutant
-    $nomPersonnel1 = $_POST['nomPersonnel1'] ?? '';
-    $prenomsPersonnel1 = $_POST['prenomsPersonnel1'] ?? '';
-    $nomPersonnel2 = $_POST['nomPersonnel2'] ?? '';
-    $prenomsPersonnel2 = $_POST['prenomsPersonnel2'] ?? '';
-    $nomPersonnel3 = $_POST['nomPersonnel3'] ?? '';
-    $prenomsPersonnel3 = $_POST['prenomsPersonnel3'] ?? '';
-    
-    // Information chantier
-    $dateDebut = $_POST['dateDebut'] ?? '';
-    $dateFin = $_POST['dateFin'] ?? '';
-    $heureDebut1 = $_POST['heureDebut1'] ?? '';
-    $heureFin1 = $_POST['heureFin1'] ?? '';
-    $heureDebut2 = $_POST['heureDebut2'] ?? '';
-    $heureFin2 = $_POST['heureFin2'] ?? '';
-    $batiment = $_POST['batiment'] ?? '';
-    $niveau = $_POST['niveau'] ?? '';
-    $locaux = $_POST['locaux'] ?? '';
-    
-    // Nature des travaux
-    $electrique = isset($_POST['electrique']) ? 1 : 0;
-    $chalumeau = isset($_POST['chalumeau']) ? 1 : 0;
-    $decoupage = isset($_POST['decoupage']) ? 1 : 0;
-    $lampeSouder = isset($_POST['lampeSouder']) ? 1 : 0;
-    $meulage = isset($_POST['meulage']) ? 1 : 0;
-    $soudage = isset($_POST['soudage']) ? 1 : 0;
-    $autres = isset($_POST['autres']) ? 1 : 0;
-    $autresTexte = $_POST['autresTexte'] ?? '';
-    
-    // Risques particuliers
-    $stockage = isset($_POST['stockage']) ? 1 : 0;
-    $canalisation = isset($_POST['canalisation']) ? 1 : 0;
-    $ventilation = isset($_POST['ventilation']) ? 1 : 0;
-    $autresRisques = isset($_POST['autresRisques']) ? 1 : 0;
-    
-    // Particularités
-    $particularites = $_POST['particularites'] ?? '';
-    
-    // Ici, vous pouvez ajouter le code pour enregistrer les données dans une base de données
-    // ou les envoyer par email, etc.
-    
-    // Exemple de requête SQL (à adapter selon votre structure de base de données)
-    /*
-    $sql = "INSERT INTO permis_feu (
-        numero_permis, etablissement, adresse, code_postal, ville,
-        nom_donneur, prenoms_donneur, fonction_donneur, code_postal_donneur,
-        service_interne, entreprise, adresse_execution, code_postal_execution, ville_execution,
-        nom_donneur2, prenoms_donneur2, fonction_donneur2, code_postal_donneur2,
-        nom_responsable, prenoms_responsable, fonction_responsable, code_postal_responsable,
-        nom_personnel1, prenoms_personnel1, nom_personnel2, prenoms_personnel2, nom_personnel3, prenoms_personnel3,
-        date_debut, date_fin, heure_debut1, heure_fin1, heure_debut2, heure_fin2, batiment, niveau, locaux,
-        electrique, chalumeau, decoupage, lampe_souder, meulage, soudage, autres, autres_texte,
-        stockage, canalisation, ventilation, autres_risques, particularites
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $numeroPermis, $etablissement, $adresse, $codePostal, $ville,
-        $nomDonneur, $prenomsDonneur, $fonctionDonneur, $codePostalDonneur,
-        $serviceInterne, $entreprise, $adresseExecution, $codePostalExecution, $villeExecution,
-        $nomDonneur2, $prenomsDonneur2, $fonctionDonneur2, $codePostalDonneur2,
-        $nomResponsable, $prenomsResponsable, $fonctionResponsable, $codePostalResponsable,
-        $nomPersonnel1, $prenomsPersonnel1, $nomPersonnel2, $prenomsPersonnel2, $nomPersonnel3, $prenomsPersonnel3,
-        $dateDebut, $dateFin, $heureDebut1, $heureFin1, $heureDebut2, $heureFin2, $batiment, $niveau, $locaux,
-        $electrique, $chalumeau, $decoupage, $lampeSouder, $meulage, $soudage, $autres, $autresTexte,
-        $stockage, $canalisation, $ventilation, $autresRisques, $particularites
-    ]);
-    */
-    
-    $message = "Permis de feu enregistré avec succès";
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
+    // Validate required foreign keys
+    if (empty($_POST['site_id']) || empty($_POST['agent_id'])) {
+        $message = "Erreur : Le site et l'agent sont requis.";
+    } else {
+        // Récupération et sécurisation des données du formulaire
+        $site_id = (int) $_POST['site_id'];
+        $agent_id = (int) $_POST['agent_id'];
+        $reference = htmlspecialchars(trim($_POST['reference']), ENT_QUOTES);
+        $numero = (int) $_POST['numero'];
+        $entree_date = $_POST['entree_date'] ?? '';
+        $entree_heure = $_POST['entree_heure'] ?? '';
+        $sortie_date = $_POST['sortie_date'] ?? '';
+        $sortie_heure = $_POST['sortie_heure'] ?? '';
+        $identite = in_array($_POST['identite'], ['employe', 'interimaire', 'visiteur']) ? $_POST['identite'] : 'visiteur';
+        $nom = htmlspecialchars(trim($_POST['nom']), ENT_QUOTES);
+        $prenom = htmlspecialchars(trim($_POST['prenom']), ENT_QUOTES);
+        $motif_entree = htmlspecialchars(trim($_POST['motif_entree']), ENT_QUOTES);
+        $societe = htmlspecialchars(trim($_POST['societe']), ENT_QUOTES);
+        $service = htmlspecialchars(trim($_POST['service']), ENT_QUOTES);
+        $personne_visitee = htmlspecialchars(trim($_POST['personne_visitee']), ENT_QUOTES);
+        $badge = htmlspecialchars(trim($_POST['badge']), ENT_QUOTES);
+        $piece = (int) $_POST['piece'];
+        $matricule = htmlspecialchars(trim($_POST['matricule']), ENT_QUOTES);
+        $controle = isset($_POST['controle']) ? 1 : 0;
+        $plomb = htmlspecialchars(trim($_POST['plomb']), ENT_QUOTES);
+        $remorque = htmlspecialchars(trim($_POST['remorque']), ENT_QUOTES);
+        $quai = htmlspecialchars(trim($_POST['quai']), ENT_QUOTES);
+        $livraison = htmlspecialchars(trim($_POST['livraison']), ENT_QUOTES);
+        $probleme = isset($_POST['probleme']) ? 1 : 0;
+        $commentaires = htmlspecialchars(trim($_POST['commentaires']), ENT_QUOTES);
+        
+        // Verify foreign keys exist
+        $check_site = $pdo->prepare("SELECT id FROM bj_site WHERE id = ?");
+        $check_site->execute([$site_id]);
+        
+        $check_agent = $pdo->prepare("SELECT id FROM utilisateurs WHERE id = ? AND role = 'agent'");
+        $check_agent->execute([$agent_id]);
+        
+        if (!$check_site->fetch()) {
+            $message = "Erreur : Site invalide";
+        } else if (!$check_agent->fetch()) {
+            $message = "Erreur : Agent invalide";
+        } else {
+            try {
+                $sql = "INSERT INTO entree (
+                    reference, numero, entree_date, entree_heure, sortie_date, sortie_heure,
+                    identite, site_id, agent_id, nom, prenom, motif_entree, societe,
+                    service, personne_visitee, badge, piece, matricule, controle,
+                    plomb, remorque, quai, livraison, probleme, commentaires
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )";
+
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    $reference, $numero, $entree_date, $entree_heure, $sortie_date, $sortie_heure,
+                    $identite, $site_id, $agent_id, $nom, $prenom, $motif_entree, $societe,
+                    $service, $personne_visitee, $badge, $piece, $matricule, $controle,
+                    $plomb, $remorque, $quai, $livraison, $probleme, $commentaires
+                ]);
+
+                $message = "Enregistrement réussi !";
+            } catch (PDOException $e) {
+                $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
+            }
+        }
+    }
+}
+
+// Récupération des entrées pour l'affichage
+$entries = [];
+try {
+    $sql = "SELECT *
+            FROM permis_feu  
+            ORDER BY id DESC";
+    $stmt = $pdo->query($sql);
+    $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $message = "Erreur lors de la récupération des données : " . $e->getMessage();
 }
 ?>
 
@@ -139,6 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="./assets/libs/simplebar/dist/simplebar.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
 
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
     <!-- Theme CSS -->
     <link rel="stylesheet" href="./assets/css/theme.min.css">
     <title>Permis de Feu - Autorisation de Travail par Points Chauds</title>
@@ -360,18 +351,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-    <main>
-        <div id="app-layout" class="overflow-x-hidden flex">
-            <!-- Sidebar -->
-            <?php require_once 'layout/sidebar.php'; ?>
-            
-            <!-- Overlay pour mobile -->
-            <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-            
-            <!-- Contenu principal -->
-            <div id="app-layout-content" class="min-h-screen w-full min-w-[100vw] md:min-w-0 ml-[15.625rem] [transition:margin_0.25s_ease-out]">
-                <!-- Barre de navigation -->
-                <div class="header">
+    <div id="app-layout" class="overflow-x-hidden flex">
+        <!-- Sidebar -->
+        <?php include 'layout/sidebar.php'; ?>
+
+        <div id="app-layout-content" class="min-h-screen w-full min-w-[100vw] md:min-w-0 ml-[15.625rem]">
+            <!-- Header/Navbar -->
+            <div class="header">
                     <nav class="bg-white px-6 py-[10px] flex items-center justify-between shadow-sm">
                         <a id="nav-toggle" href="#" class="text-gray-800">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -478,355 +464,387 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </ul>
                     </nav>
                 </div>
-                
-               
+                <div class="bg-indigo-600 px-8 pt-4 pb-4 flex justify-between items-center mb-3">
+                    <h3 class="text-white mb-1 font-normal">Gestion des entrées</h3>
+                </div>
+                 <!-- Barre sous le texte -->
+                 <hr class="border-t border-indigo-400 my-1">
 
-                <!-- Barre sous le texte -->
-                <hr class="border-t border-indigo-400 my-1">
+                    <!-- Contenu principal -->
+        <div class="card shadow-lg">
+        <div class="card-body h-screen">
+            <!-- Main Content -->
+            <div class="list-container">
+                            <div class="header-container">
+                                <h1>Liste Permis Feu</h1>
+                                <a href="add-permis.php" class="btn-new bg-indigo-600 p-4 text-white rounded">Nouvelle Fiche</a>
+                            </div>
 
-                <!-- Contenu principal -->
-                <div class="container">
-                    <?php if (!empty($message)): ?>
-                        <div class="alert alert-success">
-                            <?php echo $message; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="form-container">
-                        <!-- En-tête du formulaire -->
-                        <div class="form-header">
-                            <h1>AUTORISATION DE TRAVAIL PAR POINTS CHAUDS</h1>
-                            <div style="display: flex; align-items: center;">
-                                <span style="margin-right: 10px; font-weight: bold;">N°</span>
-                                <input type="text" name="numeroPermis" class="form-control" style="width: 100px;">
-                            </div>
-                        </div>
-                        
-                        <div class="form-subheader">Permis de feu</div>
-                        
-                        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-                            <!-- Établissement -->
-                            <div class="form-section">
-                                <div class="form-row">
-                                    <div class="form-group" style="flex: 2;">
-                                        <label>Établissement donneur d'ordre</label>
-                                        <input type="text" name="etablissement" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group" style="flex: 2;">
-                                        <label>Adresse</label>
-                                        <input type="text" name="adresse" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Code Postal</label>
-                                        <input type="text" name="codePostal" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Ville</label>
-                                        <input type="text" name="ville" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Ordre de travail -->
-                            <div class="form-section">
-                                <div class="section-title">Ordre de travail donné par</div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Nom</label>
-                                        <input type="text" name="nomDonneur" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Prénoms :</label>
-                                        <input type="text" name="prenomsDonneur" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Fonction</label>
-                                        <input type="text" name="fonctionDonneur" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Code Postal</label>
-                                        <input type="text" name="codePostalDonneur" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Exécution par -->
-                            <div class="form-section">
-                                <div class="form-row" style="align-items: center;">
-                                    <div style="font-weight: bold; margin-right: 20px;">Exécution par</div>
-                                    <div class="checkbox-group" style="margin-right: 20px;">
-                                        <input type="checkbox" id="serviceInterne" name="serviceInterne">
-                                        <label for="serviceInterne">Service interne</label>
-                                    </div>
-                                    <div class="checkbox-group">
-                                        <input type="checkbox" id="entreprise" name="entreprise">
-                                        <label for="entreprise">Entreprise</label>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group" style="flex: 2;">
-                                        <label>Adresse</label>
-                                        <input type="text" name="adresseExecution" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Code Postal</label>
-                                        <input type="text" name="codePostalExecution" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Ville</label>
-                                        <input type="text" name="villeExecution" class="form-control">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Second ordre de travail -->
-                            <div class="form-section">
-                                <div class="section-title">Ordre de travail donné par</div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Nom</label>
-                                        <input type="text" name="nomDonneur2" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Prénoms :</label>
-                                        <input type="text" name="prenomsDonneur2" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Fonction</label>
-                                        <input type="text" name="fonctionDonneur2" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Code Postal</label>
-                                        <input type="text" name="codePostalDonneur2" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="signature-line">
-                                    <label>Signature :</label>
-                                </div>
-                            </div>
-                            
-                            <!-- Responsable des travaux -->
-                            <div class="form-section">
-                                <div class="section-title">Responsable des travaux</div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Nom</label>
-                                        <input type="text" name="nomResponsable" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Prénoms :</label>
-                                        <input type="text" name="prenomsResponsable" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Fonction</label>
-                                        <input type="text" name="fonctionResponsable" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Code Postal</label>
-                                        <input type="text" name="codePostalResponsable" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="signature-line">
-                                    <label>Signature :</label>
-                                </div>
-                            </div>
-                            
-                            <!-- Personnel exécutant les travaux -->
-                            <div class="form-section">
-                                <div class="section-title">Personnel exécutant les travaux</div>
-                                <?php for ($i = 1; $i <= 3; $i++): ?>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Nom</label>
-                                        <input type="text" name="nomPersonnel<?php echo $i; ?>" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Prénoms :</label>
-                                        <input type="text" name="prenomsPersonnel<?php echo $i; ?>" class="form-control">
-                                    </div>
-                                    <div class="form-group" style="flex: 0.5; text-align: right;">
-                                        <label>Signature :</label>
-                                    </div>
-                                </div>
-                                <?php endfor; ?>
-                            </div>
-                            
-                            <!-- Information concernant le chantier -->
-                            <div class="form-section">
-                                <div style="font-weight: bold; margin-bottom: 15px;">Information concernant le chantier</div>
-                                
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                    <!-- Durée de validité -->
-                                    <div>
-                                        <div class="section-title">Durée de validité de la présente autorisation</div>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label>Du</label>
-                                                <input type="date" name="dateDebut" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>au :</label>
-                                                <input type="date" name="dateFin" class="form-control">
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label>de :</label>
-                                                <input type="time" name="heureDebut1" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>à :</label>
-                                                <input type="time" name="heureFin1" class="form-control">
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label>et de :</label>
-                                                <input type="time" name="heureDebut2" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>à :</label>
-                                                <input type="time" name="heureFin2" class="form-control">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Localisation des travaux -->
-                                    <div>
-                                        <div class="section-title">Localisation des travaux</div>
-                                        <div class="form-group">
-                                            <label>Bâtiment :</label>
-                                            <input type="text" name="batiment" class="form-control">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Niveau :</label>
-                                            <input type="text" name="niveau" class="form-control">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Locaux :</label>
-                                            <input type="text" name="locaux" class="form-control">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                                    <!-- Nature des travaux -->
-                                    <div>
-                                        <div class="section-title">Nature des travaux</div>
-                                        <div class="checkbox-container">
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="electrique" name="electrique">
-                                                <label for="electrique">Électrique</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="meulage" name="meulage">
-                                                <label for="meulage">Meulage</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="chalumeau" name="chalumeau">
-                                                <label for="chalumeau">Chalumeau</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="soudage" name="soudage">
-                                                <label for="soudage">Soudage</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="decoupage" name="decoupage">
-                                                <label for="decoupage">Découpage</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="autres" name="autres">
-                                                <label for="autres">Autres</label>
-                                            </div>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" id="lampeSouder" name="lampeSouder">
-                                                <label for="lampeSouder">Lampe à souder</label>
-                                            </div>
-                                        </div>
-                                        <div class="form-group" style="margin-top: 10px;">
-                                            <input type="text" name="autresTexte" class="form-control" placeholder="Précisez...">
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Risques particuliers -->
-                                    <div>
-                                        <div class="section-title">Risques particuliers</div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="stockage" name="stockage">
-                                            <label for="stockage">Stockage matières premières (papier-bois-liquide)</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="canalisation" name="canalisation">
-                                            <label for="canalisation">Canalisation de gaz</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="ventilation" name="ventilation">
-                                            <label for="ventilation">Ventilation</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="autresRisques" name="autresRisques">
-                                            <label for="autresRisques">Autres</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Particularités de ce chantier -->
-                            <div class="form-section">
-                                <div class="section-title">Particularités de ce chantier</div>
-                                <textarea name="particularites" class="form-control" rows="4"></textarea>
-                            </div>
-                            
-                            <!-- Note de bas de page -->
-                            <div class="footer-note">
-                                <p>
-                                    Le permis de feu est établi dans le but d'éviter un incendie ou une explosion suite à des travaux par points chauds.
-                                    Il doit être établi chaque fois que l'utilisation d'un chalumeau, d'un poste à l'arc, d'un poste MIG-MAG ou TIG.
-                                    Il est délivré par le chef d'entreprise ou son représentant expressément désigné par lui, chaque fois que des travaux de
-                                    cet ordre doivent être effectués, soit par le personnel de l'entreprise, soit par celui d'une entreprise extérieure.
-                                    Il est demandé à l'entreprise de prendre connaissance de prendre ses propres extincteurs.
-                                    Ce permis ne doit pas être délivré pour des travaux effectués à des postes de travail permanent.
-                                </p>
-                            </div>
-                            
-                            <button type="submit" class="submit-btn">Soumettre le formulaire</button>
-                        </form>
+                <?php if (!empty($message)): ?>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                        <?php echo $message; ?>
                     </div>
+                <?php endif; ?>
+
+                <?php
+if (isset($_GET['success']) && $_GET['success'] === 'deleted') {
+    echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Le permis de feu a été supprimé avec succès.</div>';
+}
+if (isset($_GET['error'])) {
+    if ($_GET['error'] === 'delete_failed') {
+        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">La suppression a échoué.</div>';
+    } elseif ($_GET['error'] === 'id_missing') {
+        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">ID manquant pour la suppression.</div>';
+    }
+}
+?>
+                
+                <!-- Table des entrées -->
+                    <table class="w-full table-auto border-separate border-spacing-0 rounded-lg overflow-hidden">
+                        <thead >
+                            <tr class="bg-indigo-600 text-white">
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">N°</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Agent</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Établissement</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Adresse</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Code Postal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Ville</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <?php foreach ($entries as $entry): ?>
+                                <tr class="hover:bg-gray-100 transition duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['numero_permis']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['nom_emplois']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['etablissement']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['adresse']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['code_postal']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php echo htmlspecialchars($entry['ville']); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <a type="button" data-modal-target="default-modal<?= $entry['id'] ?>" data-modal-toggle="default-modal<?= $entry['id'] ?>" class="text-indigo-600 hover:text-indigo-900">Voir</a>
+                                        <a type="button" data-modal-target="edit-modal<?= $entry['id'] ?>" data-modal-toggle="edit-modal<?= $entry['id'] ?>"  class="ml-3 text-green-600 hover:text-green-900">Modifier</a>
+                                        <a href="supprime-permis.php?id=<?= $entry['id'] ?>"  class="ml-3 text-red-600 hover:text-green-900"
+                                          onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce permis de feu ?')"
+                                        >sup</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                </div>
                 </div>
             </div>
         </div>
-    </main>
-    
+    </div>
+
+
+    <?php foreach ($entries as $permis): ?>
+   <!-- Main modal -->
+   <div id="default-modal<?= $permis['id'] ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+      <div class="relative p-4 w-[55%] max-h-full">
+         <!-- Modal content -->
+         <div class="relative bg-white rounded-lg shadow-sm">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200">
+               <h3 class="text-xl font-semibold text-gray-900">
+                  Détails du permis de feu
+               </h3>
+               <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="default-modal">
+                  <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                  </svg>
+                  <span class="sr-only">Fermer</span>
+               </button>
+            </div>
+            <!-- Modal body -->
+            <div class="p-4 md:p-5 space-y-4 overflow-y-auto max-h-80">
+               <div class="relative overflow-x-auto">
+                  <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                           <th scope="col" class="px-6 py-3">Libellé</th>
+                           <th scope="col" class="px-6 py-3">Valeur</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <!-- Informations générales -->
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Numéro du permis</th>
+                           <td class="px-6 py-4"><?= $permis['numero_permis'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Agent</th>
+                           <td class="px-6 py-4"><?= $permis['nom_emplois'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Établissement</th>
+                           <td class="px-6 py-4"><?= $permis['etablissement'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Adresse</th>
+                           <td class="px-6 py-4"><?= $permis['adresse'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Code postal</th>
+                           <td class="px-6 py-4"><?= $permis['code_postal'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Ville</th>
+                           <td class="px-6 py-4"><?= $permis['ville'] ?></td>
+                        </tr>
+
+                        <!-- Donneur d'ordre -->
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Nom du donneur</th>
+                           <td class="px-6 py-4"><?= $permis['nom_donneur'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Prénoms du donneur</th>
+                           <td class="px-6 py-4"><?= $permis['prenoms_donneur'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Fonction du donneur</th>
+                           <td class="px-6 py-4"><?= $permis['fonction_donneur'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Code postal du donneur</th>
+                           <td class="px-6 py-4"><?= $permis['code_postal_donneur'] ?></td>
+                        </tr>
+
+                        <!-- Responsable -->
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Nom du responsable</th>
+                           <td class="px-6 py-4"><?= $permis['nom_responsable'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Prénoms du responsable</th>
+                           <td class="px-6 py-4"><?= $permis['prenoms_responsable'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Fonction du responsable</th>
+                           <td class="px-6 py-4"><?= $permis['fonction_responsable'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Code postal du responsable</th>
+                           <td class="px-6 py-4"><?= $permis['code_postal_responsable'] ?></td>
+                        </tr>
+
+                        <!-- Dates et horaires -->
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Date de début</th>
+                           <td class="px-6 py-4"><?= $permis['date_debut'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Date de fin</th>
+                           <td class="px-6 py-4"><?= $permis['date_fin'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Heure de début (1ère plage)</th>
+                           <td class="px-6 py-4"><?= $permis['heure_debut1'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Heure de fin (1ère plage)</th>
+                           <td class="px-6 py-4"><?= $permis['heure_fin1'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Heure de début (2ème plage)</th>
+                           <td class="px-6 py-4"><?= $permis['heure_debut2'] ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Heure de fin (2ème plage)</th>
+                           <td class="px-6 py-4"><?= $permis['heure_fin2'] ?></td>
+                        </tr>
+
+                        <!-- Risques et particularités -->
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Risques électriques</th>
+                           <td class="px-6 py-4"><?= $permis['electrique'] ? 'Oui' : 'Non' ?></td>
+                        </tr>
+                        <tr class="bg-white border-b border-gray-200">
+                           <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Particularités</th>
+                           <td class="px-6 py-4"><?= $permis['particularites'] ?></td>
+                        </tr>
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b">
+               <button data-modal-hide="default-modal<?= $permis['id'] ?>" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Fermer</button>
+            </div>
+         </div>
+      </div>
+   </div>
+<?php endforeach; ?>
+
+
+<?php foreach ($entries as $permis): ?>
+   <!-- Main modal -->
+   <div id="edit-modal<?= $permis['id'] ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+      <div class="relative p-4 w-[75%] max-h-full">
+         <!-- Modal content -->
+         <div class="relative bg-white rounded-lg shadow-sm">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200">
+               <h3 class="text-xl font-semibold text-gray-900">
+                  Modifier le permis de feu
+               </h3>
+               <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="edit-modal<?= $permis['id'] ?>">
+                  <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                  </svg>
+                  <span class="sr-only">Fermer</span>
+               </button>
+            </div>
+            <!-- Modal body -->
+            <div class="p-4 md:p-5 space-y-4 overflow-y-auto max-h-80">
+               <form action="modifier-permis.php" method="POST">
+                  <!-- Champ caché pour l'ID -->
+                  <input type="hidden" name="id" value="<?= $permis['id'] ?>">
+
+                  <!-- Informations générales -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                        <label for="numero_permis" class="block mb-2 text-sm font-medium text-gray-900">Numéro du permis</label>
+                        <input type="text" name="numero_permis" id="numero_permis" value="<?= $permis['numero_permis'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="numero_permis" class="block mb-2 text-sm font-medium text-gray-900">Agent</label>
+                        <!-- select nom agent -->
+                         <select name="agent" id="agent_id" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <?php foreach ($agents as $agent):?>
+                               <option value="<?php echo $agent['agent_nom'];?>" <?php echo ($agent['agent_nom'] == $permis['nom_emplois'])?'selected' : '';?>><?php echo $agent['agent_nom'];?></option>
+                            <?php endforeach;?>
+                        </select>
+                     </div>
+                     <div>
+                        <label for="etablissement" class="block mb-2 text-sm font-medium text-gray-900">Établissement</label>
+                        <input type="text" name="etablissement" id="etablissement" value="<?= $permis['etablissement'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="adresse" class="block mb-2 text-sm font-medium text-gray-900">Adresse</label>
+                        <input type="text" name="adresse" id="adresse" value="<?= $permis['adresse'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="code_postal" class="block mb-2 text-sm font-medium text-gray-900">Code postal</label>
+                        <input type="text" name="code_postal" id="code_postal" value="<?= $permis['code_postal'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="ville" class="block mb-2 text-sm font-medium text-gray-900">Ville</label>
+                        <input type="text" name="ville" id="ville" value="<?= $permis['ville'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                  </div>
+
+                  <!-- Donneur d'ordre -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                     <div>
+                        <label for="nom_donneur" class="block mb-2 text-sm font-medium text-gray-900">Nom du donneur</label>
+                        <input type="text" name="nom_donneur" id="nom_donneur" value="<?= $permis['nom_donneur'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="prenoms_donneur" class="block mb-2 text-sm font-medium text-gray-900">Prénoms du donneur</label>
+                        <input type="text" name="prenoms_donneur" id="prenoms_donneur" value="<?= $permis['prenoms_donneur'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="fonction_donneur" class="block mb-2 text-sm font-medium text-gray-900">Fonction du donneur</label>
+                        <input type="text" name="fonction_donneur" id="fonction_donneur" value="<?= $permis['fonction_donneur'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="code_postal_donneur" class="block mb-2 text-sm font-medium text-gray-900">Code postal du donneur</label>
+                        <input type="text" name="code_postal_donneur" id="code_postal_donneur" value="<?= $permis['code_postal_donneur'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                  </div>
+
+                  <!-- Responsable -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                     <div>
+                        <label for="nom_responsable" class="block mb-2 text-sm font-medium text-gray-900">Nom du responsable</label>
+                        <input type="text" name="nom_responsable" id="nom_responsable" value="<?= $permis['nom_responsable'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="prenoms_responsable" class="block mb-2 text-sm font-medium text-gray-900">Prénoms du responsable</label>
+                        <input type="text" name="prenoms_responsable" id="prenoms_responsable" value="<?= $permis['prenoms_responsable'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="fonction_responsable" class="block mb-2 text-sm font-medium text-gray-900">Fonction du responsable</label>
+                        <input type="text" name="fonction_responsable" id="fonction_responsable" value="<?= $permis['fonction_responsable'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="code_postal_responsable" class="block mb-2 text-sm font-medium text-gray-900">Code postal du responsable</label>
+                        <input type="text" name="code_postal_responsable" id="code_postal_responsable" value="<?= $permis['code_postal_responsable'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                  </div>
+
+                  <!-- Dates et horaires -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                     <div>
+                        <label for="date_debut" class="block mb-2 text-sm font-medium text-gray-900">Date de début</label>
+                        <input type="date" name="date_debut" id="date_debut" value="<?= $permis['date_debut'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="date_fin" class="block mb-2 text-sm font-medium text-gray-900">Date de fin</label>
+                        <input type="date" name="date_fin" id="date_fin" value="<?= $permis['date_fin'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="heure_debut1" class="block mb-2 text-sm font-medium text-gray-900">Heure de début (1ère plage)</label>
+                        <input type="time" name="heure_debut1" id="heure_debut1" value="<?= $permis['heure_debut1'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="heure_fin1" class="block mb-2 text-sm font-medium text-gray-900">Heure de fin (1ère plage)</label>
+                        <input type="time" name="heure_fin1" id="heure_fin1" value="<?= $permis['heure_fin1'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                     </div>
+                     <div>
+                        <label for="heure_debut2" class="block mb-2 text-sm font-medium text-gray-900">Heure de début (2ème plage)</label>
+                        <input type="time" name="heure_debut2" id="heure_debut2" value="<?= $permis['heure_debut2'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                     </div>
+                     <div>
+                        <label for="heure_fin2" class="block mb-2 text-sm font-medium text-gray-900">Heure de fin (2ème plage)</label>
+                        <input type="time" name="heure_fin2" id="heure_fin2" value="<?= $permis['heure_fin2'] ?>" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                     </div>
+                  </div>
+
+                  <!-- Risques et particularités -->
+                  <div class="mt-4">
+                     <label for="particularites" class="block mb-2 text-sm font-medium text-gray-900">Particularités</label>
+                     <textarea name="particularites" id="particularites" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><?= $permis['particularites'] ?></textarea>
+                  </div>
+
+                  <!-- Boutons de soumission -->
+                  <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b">
+                     <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Enregistrer</button>
+                     <button type="button" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 ms-3" data-modal-hide="edit-modal<?= $permis['id'] ?>">Annuler</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+   </div>
+<?php endforeach; ?>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="./assets/libs/feather-icons/dist/feather.min.js"></script>
     <script src="./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./assets/libs/simplebar/dist/simplebar.min.js"></script>
     <script>
-        feather.replace();  // Remplace les icônes <i data-feather="..."> par les SVG
-        
-        // Fonction pour basculer la sidebar sur mobile
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.navbar-vertical');
-            const overlay = document.getElementById('overlay');
-            
-            if (sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
-                overlay.style.display = 'none';
-            } else {
-                sidebar.classList.add('show');
-                overlay.style.display = 'block';
-            }
-        }
-        
-        // Écouteur d'événement pour le bouton de bascule de la sidebar
-        document.getElementById('nav-toggle').addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleSidebar();
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
         });
     </script>
-    
-    <!-- Theme JS -->
-    <script src="./assets/js/theme.min.js"></script>
 </body>
 </html>
