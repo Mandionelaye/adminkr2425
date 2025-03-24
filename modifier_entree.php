@@ -1,12 +1,17 @@
 <?php
-// Define constant to allow includes
-define('INCLUDED_FROM_ENTREES', true);
-
 // Connexion à la base de données
 require_once 'config.php';
 
+// Vérifier si un ID est fourni
+if (!isset($_GET['id'])) {
+    header('Location: entrees.php');
+    exit();
+}
+
+$id = htmlspecialchars($_GET['id']);
+
 // Get list of sites
-$sites_query = "SELECT * FROM bj_site ORDER BY name ASC";  // Correction: utilisation de nom_site
+$sites_query = "SELECT * FROM bj_site ORDER BY name ASC";
 $sites_stmt = $pdo->query($sites_query);
 $sites = $sites_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -14,6 +19,20 @@ $sites = $sites_stmt->fetchAll(PDO::FETCH_ASSOC);
 $agents_query = "SELECT * FROM utilisateurs WHERE role = 'agent' ORDER BY nom";
 $agents_stmt = $pdo->query($agents_query);
 $agents = $agents_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Récupérer les détails de l'entrée
+try {
+    $stmt = $pdo->prepare("SELECT * FROM entree WHERE id = :id");
+    $stmt->execute(['id' => $id]);
+    $entree = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$entree) {
+        header('Location: entrees.php');
+        exit();
+    }
+} catch (PDOException $e) {
+    die("Erreur : " . $e->getMessage());
+}
 
 $message = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
@@ -26,8 +45,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
         $agent_id = htmlspecialchars($_POST['agent_id']);
         $reference = htmlspecialchars($_POST['reference']);
         $numero = htmlspecialchars($_POST['numero']);
-        $entree_date = $_POST['entree_date'] ?? date('Y-m-d');
-        $entree_heure = $_POST['entree_heure'] ?? date('H:i');
+        $entree_date = $_POST['entree_date'] ?? '';
+        $entree_heure = $_POST['entree_heure'] ?? '';
         $sortie_date = $_POST['sortie_date'] ?? '';
         $sortie_heure = $_POST['sortie_heure'] ?? '';
         $identite = in_array($_POST['identite'], ['employe', 'interimaire', 'visiteur']) ? $_POST['identite'] : 'visiteur';
@@ -49,20 +68,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
         $commentaires = htmlspecialchars($_POST['commentaires'] ?? '');
 
         try {
-            $sql = "INSERT INTO entree (
-                site_id, agent_id, reference, numero, entree_date, entree_heure,
-                sortie_date, sortie_heure, identite, nom, prenom, motif_entree,
-                societe, service, personne_visitee, badge, piece, matricule,
-                controle, plomb, remorque, quai, livraison, probleme, commentaires
-            ) VALUES (
-                :site_id, :agent_id, :reference, :numero, :entree_date, :entree_heure,
-                :sortie_date, :sortie_heure, :identite, :nom, :prenom, :motif_entree,
-                :societe, :service, :personne_visitee, :badge, :piece, :matricule,
-                :controle, :plomb, :remorque, :quai, :livraison, :probleme, :commentaires
-            )";
+            $sql = "UPDATE entree SET 
+                site_id = :site_id,
+                agent_id = :agent_id,
+                reference = :reference,
+                numero = :numero,
+                entree_date = :entree_date,
+                entree_heure = :entree_heure,
+                sortie_date = :sortie_date,
+                sortie_heure = :sortie_heure,
+                identite = :identite,
+                nom = :nom,
+                prenom = :prenom,
+                motif_entree = :motif_entree,
+                societe = :societe,
+                service = :service,
+                personne_visitee = :personne_visitee,
+                badge = :badge,
+                piece = :piece,
+                matricule = :matricule,
+                controle = :controle,
+                plomb = :plomb,
+                remorque = :remorque,
+                quai = :quai,
+                livraison = :livraison,
+                probleme = :probleme,
+                commentaires = :commentaires
+            WHERE id = :id";
 
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
+                'id' => $id,
                 'site_id' => $site_id,
                 'agent_id' => $agent_id,
                 'reference' => $reference,
@@ -90,11 +126,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                 'commentaires' => $commentaires
             ]);
 
-            $message = "Enregistrement réussi !";
-            header("Location: entrees.php");
+            $message = "Modification réussie !";
+            header("Location: view_entree.php?id=" . $id);
             exit();
         } catch (PDOException $e) {
-            $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
+            $message = "Erreur lors de la modification : " . $e->getMessage();
         }
     }
 }
@@ -452,8 +488,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     </nav>
                 </div>
         <div class="mb-6">
-            <h1 class="text-2xl font-bold tracking-tight">Nouvelle Entrée</h1>
-            <p class="text-gray-600">Formulaire d'enregistrement d'une nouvelle entrée</p>
+            <h1 class="text-2xl font-bold tracking-tight">Modifier l'entrée</h1>
+            <p class="text-gray-600">Modification de l'entrée <?php echo htmlspecialchars($entree['reference']); ?></p>
         </div>
 
         <?php if (!empty($message)): ?>
@@ -464,7 +500,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
 
         <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
             <div class="bg-gray-100 px-4 py-3 border-b border-gray-300">
-                <h2 class="text-gray-700 text-xl font-semibold">FORMULAIRE D'ENTRÉE</h2>
+                <h2 class="text-gray-700 text-xl font-semibold">FORMULAIRE DE MODIFICATION</h2>
             </div>
 
             <form method="post" class="p-4">
@@ -474,7 +510,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                         <select id="site_id" name="site_id" required class="w-full border border-gray-300 rounded px-3 py-2">
                             <option value="">Sélectionner un site</option>
                             <?php foreach ($sites as $site): ?>
-                                <option value="<?php echo htmlspecialchars($site['id']); ?>">
+                                <option value="<?php echo htmlspecialchars($site['id']); ?>"
+                                        <?php echo $site['id'] === $entree['site_id'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($site['name']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -486,7 +523,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                         <select id="agent_id" name="agent_id" required class="w-full border border-gray-300 rounded px-3 py-2">
                             <option value="">Sélectionner un agent</option>
                             <?php foreach ($agents as $agent): ?>
-                                <option value="<?php echo htmlspecialchars($agent['id']); ?>">
+                                <option value="<?php echo htmlspecialchars($agent['id']); ?>"
+                                        <?php echo $agent['id'] === $entree['agent_id'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($agent['nom'] . ' ' . $agent['prenom']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -498,12 +536,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="reference" class="block mb-1">Référence</label>
                         <input type="text" id="reference" name="reference" required
+                               value="<?php echo htmlspecialchars($entree['reference']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
 
                     <div>
                         <label for="numero" class="block mb-1">Numéro</label>
                         <input type="text" id="numero" name="numero" required
+                               value="<?php echo htmlspecialchars($entree['numero']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -511,19 +551,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="flex items-center gap-2">
                         <label for="entree_date" class="min-w-20">Entrée le</label>
-                        <input type="date" id="entree_date" name="entree_date" 
-                               value="<?php echo date('Y-m-d'); ?>" required
+                        <input type="date" id="entree_date" name="entree_date" required
+                               value="<?php echo htmlspecialchars($entree['entree_date']); ?>"
                                class="border border-gray-300 rounded px-3 py-2">
-                        <input type="time" id="entree_heure" name="entree_heure"
-                               value="<?php echo date('H:i'); ?>" required
+                        <input type="time" id="entree_heure" name="entree_heure" required
+                               value="<?php echo htmlspecialchars($entree['entree_heure']); ?>"
                                class="border border-gray-300 rounded px-3 py-2">
                     </div>
 
                     <div class="flex items-center gap-2">
                         <label for="sortie_date" class="min-w-20">Sortie le</label>
                         <input type="date" id="sortie_date" name="sortie_date"
+                               value="<?php echo htmlspecialchars($entree['sortie_date']); ?>"
                                class="border border-gray-300 rounded px-3 py-2">
                         <input type="time" id="sortie_heure" name="sortie_heure"
+                               value="<?php echo htmlspecialchars($entree['sortie_heure']); ?>"
                                class="border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -532,15 +574,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <h3 class="font-semibold mb-2">IDENTITÉ</h3>
                     <div class="flex gap-4">
                         <label class="flex items-center">
-                            <input type="radio" name="identite" value="employe" required>
+                            <input type="radio" name="identite" value="employe" required
+                                   <?php echo $entree['identite'] === 'employe' ? 'checked' : ''; ?>>
                             <span class="ml-2">Employé</span>
                         </label>
                         <label class="flex items-center">
-                            <input type="radio" name="identite" value="interimaire">
+                            <input type="radio" name="identite" value="interimaire"
+                                   <?php echo $entree['identite'] === 'interimaire' ? 'checked' : ''; ?>>
                             <span class="ml-2">Intérimaire</span>
                         </label>
                         <label class="flex items-center">
-                            <input type="radio" name="identite" value="visiteur">
+                            <input type="radio" name="identite" value="visiteur"
+                                   <?php echo $entree['identite'] === 'visiteur' ? 'checked' : ''; ?>>
                             <span class="ml-2">Visiteur</span>
                         </label>
                     </div>
@@ -550,11 +595,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="nom" class="block mb-1">Nom</label>
                         <input type="text" id="nom" name="nom" required
+                               value="<?php echo htmlspecialchars($entree['nom']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div>
                         <label for="prenom" class="block mb-1">Prénom</label>
                         <input type="text" id="prenom" name="prenom" required
+                               value="<?php echo htmlspecialchars($entree['prenom']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -563,11 +610,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="motif_entree" class="block mb-1">Motif d'entrée</label>
                         <input type="text" id="motif_entree" name="motif_entree"
+                               value="<?php echo htmlspecialchars($entree['motif_entree']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div>
                         <label for="societe" class="block mb-1">Société</label>
                         <input type="text" id="societe" name="societe"
+                               value="<?php echo htmlspecialchars($entree['societe']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -576,11 +625,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="service" class="block mb-1">Service</label>
                         <input type="text" id="service" name="service"
+                               value="<?php echo htmlspecialchars($entree['service']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div>
                         <label for="personne_visitee" class="block mb-1">Personne visitée</label>
                         <input type="text" id="personne_visitee" name="personne_visitee"
+                               value="<?php echo htmlspecialchars($entree['personne_visitee']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -591,11 +642,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                         <div>
                             <label for="badge" class="block mb-1">Badge</label>
                             <input type="text" id="badge" name="badge"
+                                   value="<?php echo htmlspecialchars($entree['badge']); ?>"
                                    class="w-full border border-gray-300 rounded px-3 py-2">
                         </div>
                         <div>
                             <label for="piece" class="block mb-1">Pièce d'identité</label>
                             <input type="text" id="piece" name="piece"
+                                   value="<?php echo htmlspecialchars($entree['piece']); ?>"
                                    class="w-full border border-gray-300 rounded px-3 py-2">
                         </div>
                     </div>
@@ -605,17 +658,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="matricule" class="block mb-1">Immatriculation</label>
                         <input type="text" id="matricule" name="matricule"
+                               value="<?php echo htmlspecialchars($entree['matricule']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div class="flex items-center justify-center">
                         <label class="flex items-center gap-2">
-                            <input type="checkbox" name="controle" value="1">
+                            <input type="checkbox" name="controle" value="1"
+                                   <?php echo $entree['controle'] ? 'checked' : ''; ?>>
                             <span>Contrôle EPI effectué</span>
                         </label>
                     </div>
                     <div>
                         <label for="plomb" class="block mb-1">Plomb</label>
                         <input type="text" id="plomb" name="plomb"
+                               value="<?php echo htmlspecialchars($entree['plomb']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -624,11 +680,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                     <div>
                         <label for="remorque" class="block mb-1">Remorque</label>
                         <input type="text" id="remorque" name="remorque"
+                               value="<?php echo htmlspecialchars($entree['remorque']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div>
                         <label for="quai" class="block mb-1">Quai</label>
                         <input type="text" id="quai" name="quai"
+                               value="<?php echo htmlspecialchars($entree['quai']); ?>"
                                class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
@@ -639,29 +697,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
                         <div>
                             <label for="livraison" class="block mb-1">Référence bon de livraison</label>
                             <input type="text" id="livraison" name="livraison"
+                                   value="<?php echo htmlspecialchars($entree['livraison']); ?>"
                                    class="w-full border border-gray-300 rounded px-3 py-2">
                         </div>
                         <div>
                             <label class="flex items-center gap-2">
-                                <input type="checkbox" name="probleme" value="1">
+                                <input type="checkbox" name="probleme" value="1"
+                                       <?php echo $entree['probleme'] ? 'checked' : ''; ?>>
                                 <span>Signaler un problème</span>
                             </label>
                         </div>
                         <div>
                             <label for="commentaires" class="block mb-1">Commentaires</label>
                             <textarea id="commentaires" name="commentaires" rows="4"
-                                      class="w-full border border-gray-300 rounded px-3 py-2"></textarea>
+                                      class="w-full border border-gray-300 rounded px-3 py-2"><?php echo htmlspecialchars($entree['commentaires']); ?></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-4 mt-6">
-                    <a href="entrees.php" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    <a href="view_entree.php?id=<?php echo $id; ?>" 
+                       class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                         Annuler
                     </a>
                     <button type="submit" name="valider"
                             class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                        Enregistrer
+                        Enregistrer les modifications
                     </button>
                 </div>
             </form>

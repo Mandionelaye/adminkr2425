@@ -305,6 +305,7 @@ $pageTitle = $showList ? "Liste des Fiches Bilan" : "Fiche Bilan";
         <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
 
         <!-- Theme CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="./assets/css/theme.min.css">
 
         
@@ -400,7 +401,7 @@ $pageTitle = $showList ? "Liste des Fiches Bilan" : "Fiche Bilan";
             }
             
             .btn-new, .btn-save {
-                background-color: #28a745;
+                background-color: rgba(98, 75, 255, 1);
                 color: white;
                 border: none;
                 padding: 8px 16px;
@@ -413,7 +414,7 @@ $pageTitle = $showList ? "Liste des Fiches Bilan" : "Fiche Bilan";
             }
             
             .btn-new:hover, .btn-save:hover {
-                background-color: #218838;
+                background-color: rgba(98, 75, 255, 1);
             }
             
             /* Styles pour le formulaire de bilan */
@@ -953,10 +954,10 @@ $pageTitle = $showList ? "Liste des Fiches Bilan" : "Fiche Bilan";
                         <div class="list-container">
                             <div class="header-container">
                                 <h1>Liste des Fiches Bilan</h1>
-                                <a href="<?php echo $_SERVER['PHP_SELF']; ?>?new=1" class="btn-new">Nouvelle Fiche</a>
+                                <a href="<?php echo $_SERVER['PHP_SELF']; ?>?new=1" class="btn-new bg-indigo-600">Nouvelle Fiche</a>
                             </div>
                             
-                            <table class="fiches-table">
+                            <table class=" w-full table-auto border-separate border-spacing-0 rounded-lg overflow-hidden">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -1014,7 +1015,7 @@ $pageTitle = $showList ? "Liste des Fiches Bilan" : "Fiche Bilan";
                                 <!-- FICHE BILAN Header -->
                                 <div class="form-header">
                                     <h1>FICHE BILAN</h1>
-                                    <span class="identifier">Identifiant de MC_Bilan_Premier_Secours</span>
+                                    <!-- <span class="identifier">Identifiant de MC_Bilan_Premier_Secours</span> -->
                                 </div>
                                 
                                 <!-- Date Section -->

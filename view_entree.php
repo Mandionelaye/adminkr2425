@@ -1,103 +1,33 @@
 <?php
-// Define constant to allow includes
-define('INCLUDED_FROM_ENTREES', true);
-
 // Connexion à la base de données
 require_once 'config.php';
 
-// Get list of sites
-$sites_query = "SELECT * FROM bj_site ORDER BY id";
-$sites_stmt = $pdo->query($sites_query);
-$sites = $sites_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get list of agents (users with role 'agent')
-$agents_query = "SELECT * FROM utilisateurs WHERE role = 'agent' ORDER BY nom";
-$agents_stmt = $pdo->query($agents_query);
-$agents = $agents_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$message = "";
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['valider'])) {
-    // Validate required foreign keys
-    if (empty($_POST['site_id']) || empty($_POST['agent_id'])) {
-        $message = "Erreur : Le site et l'agent sont requis.";
-    } else {
-        // Récupération et sécurisation des données du formulaire
-        $site_id = (int) $_POST['site_id'];
-        $agent_id = (int) $_POST['agent_id'];
-        $reference = htmlspecialchars(trim($_POST['reference']), ENT_QUOTES);
-        $numero = (int) $_POST['numero'];
-        $entree_date = $_POST['entree_date'] ?? '';
-        $entree_heure = $_POST['entree_heure'] ?? '';
-        $sortie_date = $_POST['sortie_date'] ?? '';
-        $sortie_heure = $_POST['sortie_heure'] ?? '';
-        $identite = in_array($_POST['identite'], ['employe', 'interimaire', 'visiteur']) ? $_POST['identite'] : 'visiteur';
-        $nom = htmlspecialchars(trim($_POST['nom']), ENT_QUOTES);
-        $prenom = htmlspecialchars(trim($_POST['prenom']), ENT_QUOTES);
-        $motif_entree = htmlspecialchars(trim($_POST['motif_entree']), ENT_QUOTES);
-        $societe = htmlspecialchars(trim($_POST['societe']), ENT_QUOTES);
-        $service = htmlspecialchars(trim($_POST['service']), ENT_QUOTES);
-        $personne_visitee = htmlspecialchars(trim($_POST['personne_visitee']), ENT_QUOTES);
-        $badge = htmlspecialchars(trim($_POST['badge']), ENT_QUOTES);
-        $piece = (int) $_POST['piece'];
-        $matricule = htmlspecialchars(trim($_POST['matricule']), ENT_QUOTES);
-        $controle = isset($_POST['controle']) ? 1 : 0;
-        $plomb = htmlspecialchars(trim($_POST['plomb']), ENT_QUOTES);
-        $remorque = htmlspecialchars(trim($_POST['remorque']), ENT_QUOTES);
-        $quai = htmlspecialchars(trim($_POST['quai']), ENT_QUOTES);
-        $livraison = htmlspecialchars(trim($_POST['livraison']), ENT_QUOTES);
-        $probleme = isset($_POST['probleme']) ? 1 : 0;
-        $commentaires = htmlspecialchars(trim($_POST['commentaires']), ENT_QUOTES);
-        
-        // Verify foreign keys exist
-        $check_site = $pdo->prepare("SELECT id FROM bj_site WHERE id = ?");
-        $check_site->execute([$site_id]);
-        
-        $check_agent = $pdo->prepare("SELECT id FROM utilisateurs WHERE id = ? AND role = 'agent'");
-        $check_agent->execute([$agent_id]);
-        
-        if (!$check_site->fetch()) {
-            $message = "Erreur : Site invalide";
-        } else if (!$check_agent->fetch()) {
-            $message = "Erreur : Agent invalide";
-        } else {
-            try {
-                $sql = "INSERT INTO entree (
-                    reference, numero, entree_date, entree_heure, sortie_date, sortie_heure,
-                    identite, site_id, agent_id, nom, prenom, motif_entree, societe,
-                    service, personne_visitee, badge, piece, matricule, controle,
-                    plomb, remorque, quai, livraison, probleme, commentaires
-                ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )";
-
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    $reference, $numero, $entree_date, $entree_heure, $sortie_date, $sortie_heure,
-                    $identite, $site_id, $agent_id, $nom, $prenom, $motif_entree, $societe,
-                    $service, $personne_visitee, $badge, $piece, $matricule, $controle,
-                    $plomb, $remorque, $quai, $livraison, $probleme, $commentaires
-                ]);
-
-                $message = "Enregistrement réussi !";
-            } catch (PDOException $e) {
-                $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
-            }
-        }
-    }
+// Vérifier si un ID est fourni
+if (!isset($_GET['id'])) {
+    header('Location: entrees.php');
+    exit();
 }
 
-// Récupération des entrées pour l'affichage
-$entries = [];
+$id = htmlspecialchars($_GET['id']);
+
+// Récupérer les détails de l'entrée
+$sql = "SELECT e.*, s.name as site_name, CONCAT(a.nom, ' ', a.prenom) as agent_name 
+        FROM entree e 
+        LEFT JOIN bj_site s ON e.site_id = s.id 
+        LEFT JOIN utilisateurs a ON e.agent_id = a.id 
+        WHERE e.id = :id";
+
 try {
-    $sql = "SELECT e.*, s.name as site_nom, CONCAT(u.nom, ' ', u.prenom) as agent_nom 
-            FROM entree e 
-            LEFT JOIN bj_site s ON e.site_id = s.id 
-            LEFT JOIN utilisateurs u ON e.agent_id = u.id 
-            ORDER BY e.entree_date DESC, e.entree_heure DESC";
-    $stmt = $pdo->query($sql);
-    $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['id' => $id]);
+    $entree = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$entree) {
+        header('Location: entrees.php');
+        exit();
+    }
 } catch (PDOException $e) {
-    $message = "Erreur lors de la récupération des données : " . $e->getMessage();
+    die("Erreur : " . $e->getMessage());
 }
 ?>
 
@@ -338,14 +268,14 @@ try {
         }
     </style>
 </head>
-<body>
-    <div id="app-layout" class="overflow-x-hidden flex">
+<body class="bg-gray-100">
+<div id="app-layout" class="overflow-x-hidden flex">
         <!-- Sidebar -->
         <?php include 'layout/sidebar.php'; ?>
 
         <div id="app-layout-content" class="min-h-screen w-full min-w-[100vw] md:min-w-0 ml-[15.625rem]">
             <!-- Header/Navbar -->
-            <div class="header">
+                <div class="header">
                     <nav class="bg-white px-6 py-[10px] flex items-center justify-between shadow-sm">
                         <a id="nav-toggle" href="#" class="text-gray-800">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -452,83 +382,124 @@ try {
                         </ul>
                     </nav>
                 </div>
-                <div class="bg-indigo-600 px-8 pt-4 pb-4 flex justify-between items-center mb-3">
-                    <h3 class="text-white mb-1 font-normal">Gestion des entrées</h3>
+            
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Détails de l'entrée</h1>
+                <p class="text-gray-600">Référence: <?php echo htmlspecialchars($entree['reference']); ?></p>
+            </div>
+            <div class="space-x-4">
+                <a href="modifier_entree.php?id=<?php echo $id; ?>" 
+                   class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Modifier
+                </a>
+                <a href="entrees.php" 
+                   class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Retour
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">Informations générales</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Site:</dt>
+                            <dd><?php echo htmlspecialchars($entree['site_name']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Agent:</dt>
+                            <dd><?php echo htmlspecialchars($entree['agent_name']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Numéro:</dt>
+                            <dd><?php echo htmlspecialchars($entree['numero']); ?></dd>
+                        </div>
+                    </dl>
                 </div>
-                 <!-- Barre sous le texte -->
-                 <hr class="border-t border-indigo-400 my-1">
 
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">Dates</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Entrée:</dt>
+                            <dd><?php echo htmlspecialchars($entree['entree_date'] . ' ' . $entree['entree_heure']); ?></dd>
+                        </div>
+                        <?php if ($entree['sortie_date']): ?>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Sortie:</dt>
+                            <dd><?php echo htmlspecialchars($entree['sortie_date'] . ' ' . $entree['sortie_heure']); ?></dd>
+                        </div>
+                        <?php endif; ?>
+                    </dl>
+                </div>
 
-                 <div class="card shadow-lg">
-                 <div class="card-body h-screen"> 
-                    <!-- Contenu principal -->
-                    <div class="container table-responsive">
-            <!-- Main Content -->
-            <div class="list-container">
-                            <div class="header-container">
-                                <h1>Liste des Fiches d'entrées</h1>
-                                <a href="add_entree.php" class="btn-new bg-indigo-600 p-4 text-white rounded">Nouvelle Fiche</a>
-                            </div>
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">Identité</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Type:</dt>
+                            <dd class="capitalize"><?php echo htmlspecialchars($entree['identite']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Nom:</dt>
+                            <dd><?php echo htmlspecialchars($entree['nom'] . ' ' . $entree['prenom']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Société:</dt>
+                            <dd><?php echo htmlspecialchars($entree['societe']); ?></dd>
+                        </div>
+                    </dl>
+                </div>
 
-                <?php if (!empty($message)): ?>
-                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                        <?php echo $message; ?>
-                    </div>
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">Informations complémentaires</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Badge:</dt>
+                            <dd><?php echo htmlspecialchars($entree['badge']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Pièce d'identité:</dt>
+                            <dd><?php echo htmlspecialchars($entree['piece']); ?></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Contrôle EPI:</dt>
+                            <dd><?php echo $entree['controle'] ? 'Oui' : 'Non'; ?></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <?php if ($entree['livraison'] || $entree['probleme']): ?>
+                <div class="md:col-span-2">
+                    <h3 class="font-semibold text-lg mb-4">Livraison</h3>
+                    <dl class="space-y-2">
+                        <?php if ($entree['livraison']): ?>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Référence bon de livraison:</dt>
+                            <dd><?php echo htmlspecialchars($entree['livraison']); ?></dd>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($entree['probleme']): ?>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600">Problème signalé:</dt>
+                            <dd>Oui</dd>
+                        </div>
+                        <?php endif; ?>
+                    </dl>
+                </div>
                 <?php endif; ?>
 
-                <!-- Table des entrées -->
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <table class="w-full table-auto border-separate border-spacing-0 rounded-lg overflow-hidden">
-                        <thead >
-                            <tr class="bg-indigo-600 text-white">
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date/Heure</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Site</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Visiteur</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Société</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Agent</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <?php foreach ($entries as $entry): ?>
-                                <tr class="hover:bg-gray-100 transition duration-200">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo htmlspecialchars($entry['entree_date'] . ' ' . $entry['entree_heure']); ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo htmlspecialchars($entry['site_nom']); ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo htmlspecialchars($entry['nom'] . ' ' . $entry['prenom']); ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo htmlspecialchars($entry['societe']); ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php echo htmlspecialchars($entry['agent_nom']); ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="view_entree.php?id=<?php echo $entry['id']; ?>" class="text-indigo-600 hover:text-indigo-900">Voir</a>
-                                        <a href="modifier_entree.php?id=<?php echo $entry['id']; ?>" class="ml-3 text-green-600 hover:text-green-900">Modifier</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <?php if ($entree['commentaires']): ?>
+                <div class="md:col-span-2">
+                    <h3 class="font-semibold text-lg mb-4">Commentaires</h3>
+                    <p class="text-gray-700"><?php echo nl2br(htmlspecialchars($entree['commentaires'])); ?></p>
                 </div>
-                </div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
-
-    <script src="./assets/libs/feather-icons/dist/feather.min.js"></script>
-    <script src="./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="./assets/libs/simplebar/dist/simplebar.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            feather.replace();
-        });
-    </script>
 </body>
 </html>
